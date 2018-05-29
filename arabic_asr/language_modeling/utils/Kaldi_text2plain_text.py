@@ -7,16 +7,21 @@
 #  1- Path to kaldi text
 #  2- Destination of plain text
 
-import io
 import argparse
+import codecs
 
+__author__ = "Ahmed Ismail"
+__license__ = "GPL"
+__version__ = "1.0"
+__email__ = "ahmed.ismail.zahran@gmail.com"
+__status__ = "Development"
 
 def main():
     ''' Transforms Kaldi text text to plain text through removing utterance id
     '''
     # Parse command line arguments
     arg_parser = argparse.ArgumentParser(description=('Transform Kaldi text'
-        'file to coprus ready for processing by VariKN.'))
+        'file plain text.'))
     arg_parser.add_argument('kaldi_text', type=str,
         help=(('Path to the file'
             'containing the Kaldi text corpus.')))
@@ -31,8 +36,8 @@ def main():
     # Open the Kaldi text file and the output corpus as streams
     # (It maybe infeasible to perform offline processing in case of large
     # Kaldi text files)
-    kaldi_text = io.open(path_to_text, 'r')
-    output_corpus = io.open(path_to_corpus, 'w')
+    kaldi_text = codecs.open(path_to_text, 'r', encoding='utf-8')
+    output_corpus = codecs.open(path_to_corpus, 'w', encoding='utf-8')
     
     # For each line in the Kaldi text, remove the utterance-id
     for line in kaldi_text:

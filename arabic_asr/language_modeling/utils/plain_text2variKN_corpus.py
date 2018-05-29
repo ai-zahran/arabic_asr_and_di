@@ -7,9 +7,14 @@
 #  1- Path to plain text
 #  2- Destination of VariKN corpus
 
-import io
+import codecs
 import argparse
 
+__author__ = "Ahmed Ismail"
+__license__ = "GPL"
+__version__ = "1.0"
+__email__ = "ahmed.ismail.zahran@gmail.com"
+__status__ = "Development"
 
 def main():
     ''' Transforms plain text file to a VariKN corpus file
@@ -24,22 +29,22 @@ def main():
         help=(('Path to output file to save the corpus.')))
     args = vars(arg_parser.parse_args())
 
-    path_to_text = args['plain_text']
-    path_to_corpus = args['output_corpus']
+    plain_text_file_path = args['plain_text']
+    corpus_file_path = args['output_corpus']
     
     # Open the plain text file and the output corpus as streams
     # (It maybe infeasible to perform offline processing in case of large
     # corpus files)
-    plain_text = io.open(path_to_text, 'r')
-    output_corpus = io.open(path_to_corpus, 'w')
+    plain_text_file = codecs.open(plain_text_file_path, 'r', encoding='utf-8')
+    output_corpus_file = codecs.open(corpus_file_path, 'w', encoding='utf-8')
     
     # For each line in the plain text, remove the utterance-id and add
     # VariKN sentence start and end symbols (<s> and </s> respectively)
-    for line in plain_text:
+    for line in plain_text_file:
         line = '<s> ' + line.strip() + ' </s>\n'
-        output_corpus.write(line)
-    plain_text.close()
-    output_corpus.close()
+        output_corpus_file.write(line)
+    plain_text_file.close()
+    output_corpus_file.close()
 
 
 if __name__ == '__main__':
