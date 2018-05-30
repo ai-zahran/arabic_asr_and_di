@@ -8,7 +8,7 @@
 . ./path.sh
 
 nj=4
-mfccdir="/media/ai/storage/data/500-hours_playground/feats/mfcc"
+mfccdir=data/feats
 whole_dir=data/whole
 train_dir=data/train
 train_dir_10000=data/train_10000
@@ -39,9 +39,7 @@ python utils/remove_test_speakers.py $train_dir $test_dir
 
 # Remove extra utterances in any files with Kaldi's fix_data_dir
 utils/spk2utt_to_utt2spk.pl $train_dir/utt2spk > $train_dir/spk2utt
-utils/fix_data_dir.sh $train_dir
-
-# Produce spk2utt file from utt2spk, then run Kaldi's fix_data_dir again to sort it
+utils/validate_data_dir.sh $train_dir
 utils/fix_data_dir.sh $train_dir
 
 # Select 10,000 shortest utterances in the training set and use them to train a
@@ -62,7 +60,7 @@ utils/prepare_lang.sh data/local/dict "<UNK>" data/local/lang $lang_dir
 # ============= Language model =============
 
 # Transform Kaldi corpus to the format used by variKN
-python3 utils/Kaldi_text2variKN_corpus.py data/train/text data/local/vocab.txt data/train/text_variKN
+python3 utils/Kaldi_text2variKN_corpus.py data/train/text data/train/text_variKN
 
 # Use variKN to produce Kneser-Ney smoothed n-gram model
 python utils/Kaldi_lex2variKN_vocab.py data/local/dict/lexicon.txt data/local/vocab.txt
