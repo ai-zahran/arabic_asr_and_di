@@ -1,3 +1,11 @@
+#: Title : ldc_corpus2kaldi_dir.py
+#: Author : "Ahmed Ismail" <ahmed.ismail.zahran@gmail.com>
+#: Version : 1.0
+#: Description : Transform the LDC corpus to a Kaldi data directory
+#: Arguments :
+#  1- Path to the TDF file
+#  2- Destination of the Kaldi data directory
+
 import argparse
 import codecs
 import csv
@@ -122,7 +130,7 @@ def main():
     print('Creating Kaldi data directory at %s.' % kaldi_data_dir_path)
     if os.path.isdir(kaldi_data_dir_path):
         print(('Warning: Kaldi directory already exists in the path '
-            'specified: %s. Files will be overwitten.') %
+            'specified: %s. Files will be appended.') %
             kaldi_data_dir_path)
     else:
         try:
@@ -144,8 +152,8 @@ def main():
     tdf_df['file-path'] = tdf_df['file;unicode'].apply(lambda x:
         os.path.splitext(x)[0] + '.wav')
     to_print = ['file;unicode', 'file-path']
-    tdf_df[to_print].to_csv(wav_scp_file_path, sep=' ', header=False,
-        index=False)
+    tdf_df[to_print].drop_duplicates().to_csv(wav_scp_file_path, mode='a',
+        sep=' ', header=False, index=False)
     print('Successfully saved wav.scp.')
 
     # segments: <segment-id> <utt-id> start-time end-time
@@ -154,22 +162,29 @@ def main():
         (row['file;unicode'], str(row['start;float']),
         str(row['end;float'])), axis=1)
     to_print = ['segment-id', 'file;unicode', 'start;float', 'end;float']
-    tdf_df[to_print].to_csv(segments_file_path, sep=' ', header=False,
-        index=False)
+    tdf_df[to_print].to_csv(segments_file_path, mode='a', sep=' ',
+        header=False, index=False)
     print('Successfully saved segments file.')
 
     # text: <utt-id> <utterance>
     print('Saving text file to %s.' % text_file_path)
     to_print = ['segment-id', 'transcript;unicode',]
-    tdf_df[to_print].to_csv(text_file_path, sep='\t', header=False,
+    tdf_df[to_print].to_csv(text_file_path, mode='a', sep='\t', header=False,
         index=False)
     print('Successfully saved text segments file.')
 
     # utt2spk: <utt-id> <speaker>
+    # Use Utterance-id as a prefix to the speaker name to avoid ambiguity
+    # (some speakers are named as 'speaker 1' for example, so 'speaker 1'
+    # will exist in multiple LDC tdf files, although the speakers are
+    # different)
     print('Saving utt2spk to %s.' % utt2spk_file_path)
+    tdf_df['speaker;unicode'] = tdf_df.apply(lambda row: '%s-%s' % (
+        str(row['file;unicode']), str(row['speaker;unicode'])),
+        axis=1)
     to_print = ['segment-id', 'speaker;unicode',]
-    tdf_df[to_print].to_csv(utt2spk_file_path, sep=' ', header=False,
-        index=False)
+    tdf_df[to_print].to_csv(utt2spk_file_path, mode='a', sep=' ',
+        header=False, index=False)
     print('Successfully saved utt2spk.')
 
     return 0
