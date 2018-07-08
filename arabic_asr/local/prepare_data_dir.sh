@@ -45,7 +45,6 @@ fi
 error_msg="Error: Could not create Kaldi data directory at the specified "
 error_msg="$error_msg: location $kaldi_data_dir."
 mkdir $kaldi_data_dir || [ $(echo $error_msg && exit 1)
-echo "hello"
 
 # Produce Kaldi data dir for each file in the LDC corpus
 # Append similar files together
@@ -55,12 +54,14 @@ for ldc_file in $ldc_corpus/*.tdf; do
     success_msg="$success_msg $ldc_file"
     error_msg="Error: Could not create Kaldi files for ldc corpus file "
     error_msg="$error_msg $ldc_file"
-    python utils/ldc_corpus2kaldi_dir.py $ldc_file $kaldi_data_dir && success=1\
-        || echo $error_msg && success=0
-    echo $success_msg
+    success=0
+    python utils/ldc_corpus2kaldi_dir.py $ldc_file $kaldi_data_dir \
+        --ignore-absent && success=1
     if [ $success == 1 ]; then
         echo $success_msg
         num_processed=$((num_processed + 1))
+    else
+        echo $error_msg
     fi
 done
 

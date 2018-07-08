@@ -33,7 +33,7 @@ def main():
     corpus_file_path = args['output_corpus']
     
     # Open the plain text file and the output corpus as streams
-    # (It maybe infeasible to perform offline processing in case of large
+    # (It may be infeasible to perform offline processing in case of large
     # corpus files)
     plain_text_file = codecs.open(plain_text_file_path, 'r', encoding='utf-8')
     output_corpus_file = codecs.open(corpus_file_path, 'w', encoding='utf-8')

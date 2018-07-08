@@ -13,29 +13,35 @@ import numpy as np
 import os
 import pandas as pd
 
-def parse_args(arg_info):
+
+def parse_args():
     ''' Parses command line arguments
-
-    Arguments
-    ---------
-
-    arg_info : List of dictionaries containing information about arguments
 
     Returns
     -------
 
     args : A dictionary of arguments
     '''
-    args = []
+    # Arguments help strings
+    tdf_file_path_help = 'Path to the tdf file.'
+    kaldi_data_dir_path_help = 'Destination of the Kaldi directory.'
+    ignore_absent_help = ('If set, characters absent from the target '
+        'character set will be ignored in the transliteration. If not, '
+        'absent characters will be output without mapping in the '
+        'transliteration.')
     # Parse arguments
     arg_parser = argparse.ArgumentParser()
-    for arg in arg_info:
-        arg_parser.add_argument(arg['name'], type=arg['type'], help=arg['help'])
+    arg_parser.add_argument('tdf_file_path',
+        type=str, help=tdf_file_path_help)
+    arg_parser.add_argument('kaldi_data_dir_path', type= str,
+        help=kaldi_data_dir_path_help)
+    arg_parser.add_argument('--ignore-absent', action='store_true',
+        help=ignore_absent_help)
     args = vars(arg_parser.parse_args())
     return args
 
 
-def transliterate(text, mapping):
+def transliterate(text, mapping, ignore_absent=False):
     ''' Transliterates text using the specified mapping
 
     Arguments
@@ -46,20 +52,25 @@ def transliterate(text, mapping):
     mapping : Dictionary with letters as key and their transliterations as.
     values.
 
+    ignore_absent : Boolean, if set to True, characters absent from the
+    mapping will be ignored in the transliteration. If set to False, absent
+    characters will be output without mapping in the transliteration. Default
+    is False.
+
     Returns
     -------
 
     text : String containing transliterated text.
     '''
-    text = ''.join([mapping[c] if c in mapping else c for c in text])
+    if ignore_absent:
+        text = ''.join([mapping[c] if c in mapping else '' for c in text])
+    else:
+        text = ''.join([mapping[c] if c in mapping else c for c in text])
     return text
 
 
 def main():
 
-    # Arguments help strings
-    tdf_file_path_help = 'Path to the tdf file.'
-    kaldi_data_dir_path_help = 'Destination of the Kaldi directory.'
     # Unicode dictionary
     unicode2buckwalter_dict = {u'\u0621': '\'', u'\u0622': '|', u'\u0623': '>',
         u'\u0624': '&', u'\u0625': '<', u'\u0626': '}', u'\u0627': 'A',
@@ -72,16 +83,15 @@ def main():
         u'\u0645': 'm', u'\u0646': 'n', u'\u0647': 'h', u'\u0648': 'w',
         u'\u0649': 'Y', u'\u064A': 'y', u'\u064B': 'F', u'\u064C': 'N',
         u'\u064D': 'K', u'\u064E': 'a', u'\u064F': 'u', u'\u0650': 'i',
-        u'\u0651': '~', u'\u0652': 'o', u'\u0670': '`', u'\u0671': '{'}
+        u'\u0651': '~', u'\u0652': 'o', u'\u0670': '`', u'\u0671': '{',
+        ' ': ' '}
 
     # Parse arguments
-    arg_info = [{'name': 'tdf_file_path', 'type': str, 'help':
-        tdf_file_path_help},
-        {'name': 'kaldi_data_dir_path', 'type': str, 'help':
-        kaldi_data_dir_path_help}]
-    args = parse_args(arg_info)
+    args = parse_args()
     tdf_file_path = args['tdf_file_path']
     kaldi_data_dir_path = args['kaldi_data_dir_path']
+    ignore_absent = args['ignore_absent']
+
     foreign_lang_pattern = '<foreign language=".*"> </foreign>'
     wav_scp_file_path = kaldi_data_dir_path + os.sep + 'wav.scp'
     segments_file_path = kaldi_data_dir_path + os.sep + 'segments'
@@ -119,10 +129,13 @@ def main():
         lambda x: x.replace('<non-MSA>', ''))
     print('Successfully removed <non-MSA> tags.')
 
+    # Remove utterances where end time is not larger than start time
+    tdf_df = tdf_df[tdf_df['start;float'] < tdf_df['end;float']]
+
     # Transliterate the text according to Buckwalter transliteration
     print('Transliterating text according to Buckwalter transliteration.')
     tdf_df['transcript;unicode'] = tdf_df['transcript;unicode'].apply(
-        lambda x: transliterate(x, unicode2buckwalter_dict))
+        lambda x: transliterate(x, unicode2buckwalter_dict, ignore_absent))
 
     # Save the data to a Kaldi data directory
 
@@ -145,23 +158,36 @@ def main():
     # The value of column 'file;unicode' is used as utterance id (utt-id)
     # Segment id is <file;unicode>-<start;float>-<end;float>
 
+    # Strip and remove spaces from speaker and file name to avoid errors from
+    # Kaldi
+    # Create a new file name column for this purpose (the original will be used
+    # in computing the path to the wave file)
+    tdf_df['file-name'] = tdf_df['file;unicode'].str.replace(
+        ' ', '')
+    tdf_df['speaker;unicode'] = tdf_df['speaker;unicode'].str.replace(
+        ' ', '')
+
     # wav.scp: <utt-id> /path/to/wave/file
     # path to wave file is the same as the utt-id, with .wav extension instead
     # of .sph
     print('Saving wav.scp file to %s.' % wav_scp_file_path)
     tdf_df['file-path'] = tdf_df['file;unicode'].apply(lambda x:
         os.path.splitext(x)[0] + '.wav')
-    to_print = ['file;unicode', 'file-path']
+    to_print = ['file-name', 'file-path']
     tdf_df[to_print].drop_duplicates().to_csv(wav_scp_file_path, mode='a',
         sep=' ', header=False, index=False)
     print('Successfully saved wav.scp.')
 
     # segments: <segment-id> <utt-id> start-time end-time
+    # Segment id = <speaker>-<file-name>_<start-time>-<end-time>
+    # (making speaker-id's prefixes of utterance-id's is related to Kaldi)
     print('Saving segments file to %s.' % segments_file_path)
-    tdf_df['segment-id'] = tdf_df.apply(lambda row: '%s_%s-%s' %
-        (row['file;unicode'], str(row['start;float']),
+    tdf_df['segment-id'] = tdf_df.apply(lambda row: '%s-%s_%s-%s' %
+        (row['speaker;unicode'], row['file-name'], str(row['start;float']),
         str(row['end;float'])), axis=1)
-    to_print = ['segment-id', 'file;unicode', 'start;float', 'end;float']
+    # Strip and remove spaces from segment-id to avoid errors from Kaldi
+    tdf_df['segment-id'] = tdf_df['segment-id'].str.strip().replace(' ', '')
+    to_print = ['segment-id', 'file-name', 'start;float', 'end;float']
     tdf_df[to_print].to_csv(segments_file_path, mode='a', sep=' ',
         header=False, index=False)
     print('Successfully saved segments file.')
@@ -174,14 +200,15 @@ def main():
     print('Successfully saved text segments file.')
 
     # utt2spk: <utt-id> <speaker>
-    # Use Utterance-id as a prefix to the speaker name to avoid ambiguity
+    # Use utt-id as a postfix to the speaker name to avoid ambiguity
     # (some speakers are named as 'speaker 1' for example, so 'speaker 1'
     # will exist in multiple LDC tdf files, although the speakers are
     # different)
     print('Saving utt2spk to %s.' % utt2spk_file_path)
     tdf_df['speaker;unicode'] = tdf_df.apply(lambda row: '%s-%s' % (
-        str(row['file;unicode']), str(row['speaker;unicode'])),
+        str(row['speaker;unicode']), str(row['file-name'])),
         axis=1)
+
     to_print = ['segment-id', 'speaker;unicode',]
     tdf_df[to_print].to_csv(utt2spk_file_path, mode='a', sep=' ',
         header=False, index=False)
