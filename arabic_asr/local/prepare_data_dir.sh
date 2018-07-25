@@ -9,10 +9,10 @@
 # Read arguments
 usage="USAGE: prepare_data_dir.sh <LDC_corpus> <Kaldi_data_dir>"
 eg="e.g.: prepare_data_dir.sh local/gale_p2_arb_bc_transcripts_p1 data"
-ldc_corpus_help="  LDC_corpus: String specifying the path to the LDC "
-ldc_corpus_help="transcript corpus."
-kaldi_data_dir_help="  Kaldi_data_dir: String specifying the destination to "
-kaldi_data_dir_help="the Kaldi data directory."
+ldc_corpus_help="  LDC_corpus: String specifying the path to the LDC"
+ldc_corpus_help="$ldc_corpus_help transcript corpus."
+kaldi_data_dir_help="  Kaldi_data_dir: String specifying the destination to"
+kaldi_data_dir_help="$kaldi_data_dir_help the Kaldi data directory."
 
 if [ $# -ne 2 ]; then
     echo $usage
