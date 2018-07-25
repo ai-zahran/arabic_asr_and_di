@@ -1,4 +1,4 @@
-#: Title : Kaldi_text2plain.py
+#: Title : Kaldi_text2plain_text.py
 #: Author : "Ahmed Ismail" <ahmed.ismail.zahran@gmail.com>
 #: Version : 1.0
 #: Description : Transform Kaldi text to plain text
@@ -34,7 +34,7 @@ def main():
     path_to_corpus = args['output_corpus']
     
     # Open the Kaldi text file and the output corpus as streams
-    # (It maybe infeasible to perform offline processing in case of large
+    # (It may be infeasible to perform offline processing in case of large
     # Kaldi text files)
     kaldi_text = codecs.open(path_to_text, 'r', encoding='utf-8')
     output_corpus = codecs.open(path_to_corpus, 'w', encoding='utf-8')

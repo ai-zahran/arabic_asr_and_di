@@ -31,7 +31,7 @@ def main():
     vocab_file_path = args['vocab']
     
     # Open the Kaldi lexicon file and the variKN vocabulary file as streams
-    # (It maybe infeasible to perform offline processing in case of large
+    # (It may be infeasible to perform offline processing in case of large
     # files)
     lexicon_file = codecs.open(lexicon_file_path, 'r', encoding='utf-8')
     vocab_file = codecs.open(vocab_file_path, 'w', encoding='utf-8')

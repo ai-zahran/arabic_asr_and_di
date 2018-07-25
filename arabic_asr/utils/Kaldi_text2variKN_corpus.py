@@ -34,7 +34,7 @@ def main():
     corpus_file_path = args['output_corpus']
     
     # Open the Kaldi text file and the output corpus as streams
-    # (It maybe infeasible to perform offline processing in case of large
+    # (It may be infeasible to perform offline processing in case of large
     # Kaldi text files)
     kaldi_text_file = codecs.open(text_file_path, 'r', encoding='utf-8')
     corpus_file = codecs.open(corpus_file_path, 'w', encoding='utf-8')
