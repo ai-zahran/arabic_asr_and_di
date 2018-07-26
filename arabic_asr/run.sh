@@ -132,7 +132,7 @@ steps/align_si.sh --nj $nj --cmd "$train_cmd" $train_dir $lang_dir \
 # previous model for initialization
 steps/train_lda_mllt.sh --cmd "$train_cmd" --splice-opts \
     "--left-context=3 --right-context=3" 2500 15000 $train_dir $lang_dir \
-    exp/tri1_ali tri2a/exp
+    exp/tri1_ali exp/tri2a
 
 # Build decoding graph
 utils/mkgraph.sh $lang_dir exp/tri2a exp/tri2a/graph
@@ -157,8 +157,8 @@ steps/align_si.sh --nj $nj --cmd "$train_cmd" $train_dir $lang_dir \
 
 # ============= Cleaning and segmenting =============
 # Run clean and segment scripts
-steps/cleanup/clean_and_segment_data.sh $train_dir $lang_dir exp/tri2b \
-    exp/tri2b_cleanup $train_dir_cleaned
+steps/cleanup/clean_and_segment_data.sh --nj $nj $train_dir $lang_dir \
+    exp/tri2b exp/tri2b_cleanup $train_dir_cleaned
 
 
 # ============= i-vector and TDNN training =============
