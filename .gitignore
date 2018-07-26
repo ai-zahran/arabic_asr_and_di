@@ -1,4 +1,4 @@
 arabic_asr/data
 arabic_asr/data/*
 arabic_asr/paths.txt
-.DS_Store
+**/.DS_Store
