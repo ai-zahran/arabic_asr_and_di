@@ -3,4 +3,5 @@ arabic_asr/data/*
 arabic_asr/paths.txt
 **/.DS_Store
 **/.ipynb_checkpoints
+**/*.pyc
 **/__pycache__

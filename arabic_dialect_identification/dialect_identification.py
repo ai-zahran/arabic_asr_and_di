@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 import random
 import tensorflow as tf
-from tensorflow import keras
+#from tensorflow import keras
+import keras
 
 
 dialects = ['EGY', 'GLF', 'LAV', 'MSA', 'NOR']
@@ -66,7 +67,7 @@ def base_network(input_layer):
     fc_3 : keras.layers.Dense object with 200 nodes.
     '''
     if len(input_layer.shape) == 2:
-        in_shape = input_layer.shape[1]
+        in_shape = input_layer.shape[1].value
     else:
         raise ValueError(('Expected shape (?,n). '
             'Found shape {} is not right.').format(input_layer.shape))
@@ -87,8 +88,6 @@ def main():
 
     train_ivecs_dir_path = args['train_ivecs_dir_path']
     dev_ivecs_dir_path = args['dev_ivecs_dir_path']
-    train_ivecs_dir_path = '/home/ai/Projects/dialectID/data/train.vardial2017'
-    dev_ivecs_dir_path = '/home/ai/Projects/dialectID/data/dev.vardial2017'
 
     # Read i-vectors for training and test sets
     train_ivecs = dialect_enrollment.read_ivecs_set(train_ivecs_dir_path,
@@ -100,8 +99,9 @@ def main():
     de_model = dialect_enrollment.model(train_ivecs, dev_ivecs)
 
     # Create dataset by randomly choosing utterances and a dialect enrollment model, and deducing the corresponding dialect.
-    x_train = train_ivecs.sample(1000)
-    x_train = x_train.append(dev_ivecs.sample(50))
+    #x_train = train_ivecs.sample(1000)
+    #x_train = x_train.append(dev_ivecs.sample(50))
+    x_train = train_ivecs.append(dev_ivecs)
     # Make sure all models have the same dimensionality
     model_lens = set(len(model) for model in de_model.values())
     assert len(model_lens) == 1
@@ -110,7 +110,7 @@ def main():
     de_model_df = pd.DataFrame([v.tolist() + [k] for k, v in
         de_model.items()], columns=list(range(model_lens.pop())) 
         + ['model_dialect'])
-    x_train_model = de_model_df.sample(1050, replace=True)
+    x_train_model = de_model_df.sample(len(x_train), replace=True)
     x_train = x_train.reset_index(drop=True)
     x_train_model = x_train_model.reset_index(drop=True)
     y = pd.concat([x_train['dialect'],
@@ -137,16 +137,15 @@ def main():
     print(model.summary())
 
     # Setup a callback function to save the model every epoch
-    model_file_path = 'model.epoch{:02d}-{val_acc:.2f}.hdf5'
+    model_file_path = 'model.{epoch:02d}.hdf5'
     checkpoint_callback = keras.callbacks.ModelCheckpoint(model_file_path,
         monitor='val_acc', verbose=1, save_best_only=True)
-    batch_progress_callback = keras.callbacks.LambdaCallback(
-        on_batch_begin=lambda batch,logs: print('Batch {}'.format(batch)))
+    #batch_progress_callback = keras.callbacks.LambdaCallback(
+    #    on_batch_begin=lambda batch,logs: print('Batch {}'.format(batch)))
 
     # Train the network
     history = model.fit([x_train, x_train_model], y,
-        epochs=20, batch_size=50, callbacks=[checkpoint_callback,
-        batch_progress_callback])
+        epochs=100, batch_size=50, callbacks=[checkpoint_callback])
 
     print("Finished training.")
 
