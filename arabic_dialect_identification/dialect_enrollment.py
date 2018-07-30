@@ -9,7 +9,7 @@ from utils.read_ivectors import read_ivecs_set
 
 
 dialects = ['EGY', 'GLF', 'LAV', 'MSA', 'NOR']
-INTERP_PARAM = 0.8
+INTERP_PARAM = 0.83
 
 
 def parse_arguments():
