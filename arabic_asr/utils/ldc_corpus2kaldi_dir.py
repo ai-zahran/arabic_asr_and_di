@@ -12,6 +12,7 @@ import csv
 import numpy as np
 import os
 import pandas as pd
+from transliteration import transliterate
 
 
 def parse_args():
@@ -41,50 +42,7 @@ def parse_args():
     return args
 
 
-def transliterate(text, mapping, ignore_absent=False):
-    ''' Transliterates text using the specified mapping
-
-    Arguments
-    ---------
-
-    text : String containing the text to transliterate.
-
-    mapping : Dictionary with letters as key and their transliterations as.
-    values.
-
-    ignore_absent : Boolean, if set to True, characters absent from the
-    mapping will be ignored in the transliteration. If set to False, absent
-    characters will be output without mapping in the transliteration. Default
-    is False.
-
-    Returns
-    -------
-
-    text : String containing transliterated text.
-    '''
-    if ignore_absent:
-        text = ''.join([mapping[c] if c in mapping else '' for c in text])
-    else:
-        text = ''.join([mapping[c] if c in mapping else c for c in text])
-    return text
-
-
 def main():
-
-    # Unicode dictionary
-    unicode2buckwalter_dict = {u'\u0621': '\'', u'\u0622': '|', u'\u0623': '>',
-        u'\u0624': '&', u'\u0625': '<', u'\u0626': '}', u'\u0627': 'A',
-        u'\u0628': 'b', u'\u0629': 'p', u'\u062A': 't', u'\u062B': 'v',
-        u'\u062C': 'j', u'\u062D': 'H', u'\u062E': 'x', u'\u062F': 'd',
-        u'\u0630': '*', u'\u0631': 'r', u'\u0632': 'z', u'\u0633': 's',
-        u'\u0634': '$', u'\u0635': 'S', u'\u0636': 'D', u'\u0637': 'T',
-        u'\u0638': 'Z', u'\u0639': 'E', u'\u063A': 'g', u'\u0640': '_',
-        u'\u0641': 'f', u'\u0642': 'q', u'\u0643': 'k', u'\u0644': 'l',
-        u'\u0645': 'm', u'\u0646': 'n', u'\u0647': 'h', u'\u0648': 'w',
-        u'\u0649': 'Y', u'\u064A': 'y', u'\u064B': 'F', u'\u064C': 'N',
-        u'\u064D': 'K', u'\u064E': 'a', u'\u064F': 'u', u'\u0650': 'i',
-        u'\u0651': '~', u'\u0652': 'o', u'\u0670': '`', u'\u0671': '{',
-        ' ': ' '}
 
     # Parse arguments
     args = parse_args()
@@ -135,7 +93,7 @@ def main():
     # Transliterate the text according to Buckwalter transliteration
     print('Transliterating text according to Buckwalter transliteration.')
     tdf_df['transcript;unicode'] = tdf_df['transcript;unicode'].apply(
-        lambda x: transliterate(x, unicode2buckwalter_dict, ignore_absent))
+        lambda x: transliterate(x, 'unicode', 'buckwalter', ignore_absent))
 
     # Save the data to a Kaldi data directory
 
