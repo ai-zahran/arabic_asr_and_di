@@ -5,6 +5,8 @@
 #: Description : Build MIT-QCRI system for MGB-challenge Arabic DI task.
 
 # Read training and development i-vectors directory paths
+. ./path.sh
+
 dialectID_repo_url="https://github.com/qcri/dialectID.git"
 
 usage="Usage: run.sh <MGB3_dialectID_dir>"
@@ -35,4 +37,22 @@ if [ ! -d $dev_vardial_dir_path ] || [ ! -d $train_vardial_dir_path ]; then
     exit 1
 fi
 
+if [ ! -d data ]; then
+    mkdir data
+fi
+
+# Length Normalization
+echo "Performing length normalization on i-vectors."
+# Convert data to Kaldi-compatible ark format and perform length normalization
+# using Kaldi's ivector-normalize-length
+langs=(EGY GLF LAV MSA NOR)
+for i in "${!langs[@]}"; do
+    lang=${langs[$i]}
+    cat $train_vardial_dir_path/$lang.ivec | awk '{printf "%s  [ ",$1;for (i=2;i<=NF;i++){printf "%f ",$i};printf "]\n"}' > data/$lang.ivec
+    ivector-normalize-length ark:data/$lang.ivec ark,t:data/${lang}_normalized.ivec
+    mv data/${lang}_normalized.ivec data/${lang}.ivec
+done
+
+# Run Siamese neural network training
 python dialect_identification.py $train_vardial_dir_path $dev_vardial_dir_path
+
