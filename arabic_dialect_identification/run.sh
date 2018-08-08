@@ -5,7 +5,10 @@
 #: Description : Build MIT-QCRI system for MGB-challenge Arabic DI task.
 
 # Read training and development i-vectors directory paths
-. ./path.sh
+. ./path.sh || exit 1
+cmd="run.pl"
+
+. parse_options.sh || exit 1
 
 dialectID_repo_url="https://github.com/qcri/dialectID.git"
 
@@ -43,14 +46,34 @@ fi
 
 # Length Normalization
 echo "Performing length normalization on i-vectors."
+
 # Convert data to Kaldi-compatible ark format and perform length normalization
 # using Kaldi's ivector-normalize-length
 langs=(EGY GLF LAV MSA NOR)
-for i in "${!langs[@]}"; do
-    lang=${langs[$i]}
-    cat $train_vardial_dir_path/$lang.ivec | awk '{printf "%s  [ ",$1;for (i=2;i<=NF;i++){printf "%f ",$i};printf "]\n"}' > data/$lang.ivec
-    ivector-normalize-length ark:data/$lang.ivec ark,t:data/${lang}_normalized.ivec
-    mv data/${lang}_normalized.ivec data/${lang}.ivec
+for dir in train_vardial_dir_path dev_vardial_dir_path; do
+    for lang in ${langs[@]}; do
+        cat $dir/$lang.ivec | awk \
+            '{printf "%s  [ ",$1;for (i=2;i<=NF;i++){printf "%f ",$i};printf "]\n"}' \
+            > $dir/${lang}_kaldi.ivec
+        ivector-normalize-length ark:$dir/${lang}_kaldi.ivec \
+            ark,t:$dir/${lang}_normalized.ivec
+    done
+done
+
+# Whitening transformation
+echo "Computing whitening transforamtion."
+
+# Compute whitening transformation from development set i-vectors
+cat $dev_vardial_dir_path/*.ivec > $dev_vardial_dir_path/dev_accumulated.ivec
+$cmd log/transform.log est-pca --read-vectors=true --normaliza-mean=false \
+    --normalize-variance=true --dim=-1 \
+    ark,t:$dev_vardial_dir_path/dev_accumulated.ivec transform.mat
+
+# Apply whitening transformation to traning set i-vectors
+for $lang in ${langs[@]}; do
+    transform-feats transform.mat \
+        ark,t:$train_vardial_dir_path/${lang}_normalized.ivec \
+        ark,t:$train_vardial_dir_path/${lang}_normalized_whitened.ivec
 done
 
 # Run Siamese neural network training
