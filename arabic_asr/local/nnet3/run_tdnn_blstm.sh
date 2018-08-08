@@ -27,10 +27,10 @@ chunk_right_context=40
 ali_dir=exp/tri3a_ali
 lang_dir=data/lang
 train_dir_vp_sp=data/train_vp_sp
-tree_dir=/media/ai/storage/kaldi/500hrs/exp/nnet3/chain/tree
+tree_dir=exp/nnet3/chain/tree
 ivector_dir=exp/ivectors_train
-lat_dir=/media/ai/storage/kaldi/500hrs/exp/tri3a_lats
-dir=/media/ai/storage/kaldi/500hrs/exp/nnet3/chain/tdnn_blstm
+lat_dir=exp/tri3a_lats
+dir=exp/nnet3/chain/tdnn_blstm
 
 if ! cuda-compiled; then
     cat <<EOF && exit 1
