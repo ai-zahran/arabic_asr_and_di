@@ -50,7 +50,7 @@ echo "Performing length normalization on i-vectors."
 # Convert data to Kaldi-compatible ark format and perform length normalization
 # using Kaldi's ivector-normalize-length
 langs=(EGY GLF LAV MSA NOR)
-for dir in train_vardial_dir_path dev_vardial_dir_path; do
+for dir in $train_vardial_dir_path $dev_vardial_dir_path; do
     for lang in ${langs[@]}; do
         cat $dir/$lang.ivec | awk \
             '{printf "%s  [ ",$1;for (i=2;i<=NF;i++){printf "%f ",$i};printf "]\n"}' \
@@ -64,16 +64,17 @@ done
 echo "Computing whitening transforamtion."
 
 # Compute whitening transformation from development set i-vectors
-cat $dev_vardial_dir_path/*.ivec > $dev_vardial_dir_path/dev_accumulated.ivec
-$cmd log/transform.log est-pca --read-vectors=true --normaliza-mean=false \
-    --normalize-variance=true --dim=-1 \
-    ark,t:$dev_vardial_dir_path/dev_accumulated.ivec transform.mat
+cat $dev_vardial_dir_path/*_normalized.ivec > \
+    $dev_vardial_dir_path/dev_accumulated.ivec
+est-pca --read-vectors=true --normaliza-mean=false --normalize-variance=true \
+    --dim=-1 ark,t:$dev_vardial_dir_path/dev_accumulated.ivec transform.mat
 
 # Apply whitening transformation to traning set i-vectors
-for $lang in ${langs[@]}; do
+for lang in ${langs[@]}; do
     transform-feats transform.mat \
         ark,t:$train_vardial_dir_path/${lang}_normalized.ivec \
-        ark,t:$train_vardial_dir_path/${lang}_normalized_whitened.ivec
+        ark,t:$train_vardial_dir_path/${lang}_normalized_whitened.ivec \
+        || exit 1
 done
 
 # Run Siamese neural network training
