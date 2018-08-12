@@ -15,7 +15,7 @@ if [ -f path.sh ]; then . ./path.sh; fi
 
 if [ $# != 6 ]; then
     echo "Usage: run_adaptation <feat-dir> <ivectors-dir> <dev-dir> "
-        "<lang-dir> <ali-dir> <target-dir>"
+        "<lang-dir> <ali-dir> <model-dir> <target-dir>"
 fi
 
 feat_dir=$1
