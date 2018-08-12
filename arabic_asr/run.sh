@@ -18,6 +18,8 @@ train_dir_vp_sp=data/train_vp_sp
 train_dir_vp_sp_20=data/train_dir_speed_pert_20
 test_dir=data/test
 lang_dir=data/lang
+mgb3_adapt_dir=data/mgb3_adapt.20170322
+mgb3_dev_dir=data/mgb3_dev.20170322
 
 
 # ============= Feature extraction =============
@@ -231,3 +233,17 @@ steps/online/nnet2/extract_ivectors_online.sh --cmd "$train_cmd" \
 # Run TDNN training
 local/nnet3/run_tdnn.sh $train_dir_vp_sp exp/ivectors_train data/lang \
 exp/tri3a exp/tri3a_ali exp/nnet3/tdnn
+
+# Extract MFCC's for MGB-3 data
+utils/utt2spk_to_spk2utt.pl $mgb3_adapt_dir/utt2spk > $mgb3_adapt_dir/spk2utt \
+    || exit 1
+utils/utt2spk_to_spk2utt.pl $mgb3_dev_dir/utt2spk > $mgb3_dev_dir/spk2utt \
+    || exit 1
+steps/make_mfcc.sh --nj $nj --cmd "$train_cmd" $mgb3_adapt_dir \
+    exp/make_mfcc/mgb3_adapt.20170322 $mfccdir
+steps/make_mfcc.sh --nj $nj --cmd "$train_cmd" $mgb3_dev_dir \
+    exp/make_mfcc/mgb3_dev.20170322 $mfccdir
+steps/compute_cmvn_stats.sh $mgb3_adapt_dir \
+    exp/make_mfcc/mgb3_adapt.20170322 $mfccdir
+steps/compute_cmvn_stats.sh $mgb3_dev_dir \
+    exp/make_mfcc/mgb3_dev.20170322 $mfccdir
