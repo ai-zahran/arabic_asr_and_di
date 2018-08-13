@@ -7,8 +7,8 @@
 display_usage() {
     echo "Usage: run.sh [options]"
     echo "e.g.: run.sh -f data/1.wav"
-    echo "main options (please specify exactly one option, unless otherwise"
-    "specified):"
+    echo "main options (please specify exactly one option, unless otherwise" \
+	"specified):"
     echo "  --conf              # configuration file containing the Kaldi"
     echo "                      # directory's path and the feature files"
     echo "                      # destination."
@@ -84,7 +84,7 @@ make_data_dir_from_file() {
     [ -d $data_dir ] || mkdir $data_dir
     echo "rec $file_path" > $data_dir/wav.scp
     echo "rec rec" > $data_dir/utt2spk
-    utils/utt2spk_to_spk2utt.pl $data_dir/utt2spk $data_dir/spk2utt
+    utils/utt2spk_to_spk2utt.pl $data_dir/utt2spk > $data_dir/spk2utt
 }
 
 make_data_dir_from_dir() {
@@ -103,8 +103,13 @@ make_data_dir_from_dir() {
         echo "rec_$file_count $file_path" >> $data_dir/wav.scp
         echo "rec_$file_count rec_$file_count" >> $data_dir/utt2spk
     done
-    utils/utt2spk_to_spk2utt.pl $data_dir/utt2spk $data_dir/spk2utt
+    utils/utt2spk_to_spk2utt.pl $data_dir/utt2spk > $data_dir/spk2utt
 }
+
+# Script starts here
+
+nj=1
+recursive=0
 
 if [ $# -eq 0 ]; then
     display_usage
@@ -142,6 +147,7 @@ while [ $# -gt 0 ]; do
             shift
             ;;
         -o|--output)
+	    shift
             output_dir=$1
             shift
             ;;
@@ -153,11 +159,16 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+if [ -z $output_dir ]; then
+    echo "Error: No output directory specified. Please specify an output" \
+    "directory through -o."
+    exit 1
+fi
 [ -d $output_dir ] || mkdir -p $output_dir || exit 1
 
-# Define model to use
+# Define the model to use
 eg_dir=egs/gale_arabic_2
-model=$eg_dir/s5/exp/nnet3/tdnn
+model_dir=exp/nnet3/tdnn
 
 # Read configuration
 if [ -n $conf_path ]; then
@@ -167,26 +178,32 @@ else
 fi
 
 # Produce a data directory from the specified files
-cd $kaldi_dir/$eg_dir
+cd $kaldi_dir/$eg_dir/s5
+echo "Changed dir to $kaldi_dir/$eg_dir/s5"
 . ./cmd.sh
 . ./path.sh
 if [ -n file_path ]; then
     make_data_dir_from_file $file_path
 elif [ -n dir_path ]; then
     make_data_dir_from_dir $dir_path
+else
+    echo "Error: No files specified. Please specify a file through -f or a "
+        "directory through -d."
 fi
 
 # Extract features and i-vectors
-steps/make_mfcc.sh --nj $nj --cmd "$train_cmd" $data_dir \
-    exp/make_mfcc/rec $feat_dir || exit 1;
-steps/compute_cmvn_stats.sh $data_dir exp/make_mfcc/rec $feat_dir || exit 1;
-steps/online/nnet2/extract_ivectors_online.sh --cmd "$train_cmd" \
-  --nj 2 $feat_dir exp/ivector_extractor exp/ivectors_rec || exit 1;
+#steps/make_mfcc.sh --nj $nj --cmd "$train_cmd" $data_dir \
+#    exp/make_mfcc/rec $feat_dir || exit 1;
+#steps/compute_cmvn_stats.sh $data_dir exp/make_mfcc/rec $feat_dir || exit 1;
+#steps/online/nnet2/extract_ivectors_online.sh --cmd "$train_cmd" \
+#  --nj 1 $data_dir exp/ivector_extractor exp/ivectors_rec || exit 1;
 
 # Decode
-steps/nnet3/decode.sh --nj 1 --cmd "$decode_cmd" --online-ivector-dir \
-    exp/ivectors_rec $model_dir/graph $data_dir $model_dir/decode
+#steps/nnet3/decode.sh --nj 1 --cmd "$decode_cmd" --online-ivector-dir \
+#    exp/ivectors_rec $model_dir/graph $data_dir $model_dir/decode
 
 # Produce ctm from lattice
+lattice-copy ark:"gunzip -c $model_dir/decode/lat.1.gz |" \
+    ark,t:$model_dir/decode/lat.1
 lattice-to-ctm-conf ark:$model_dir/decode/lat.1 output.ctm
 python utils/ctm2srt.py output.ctm $output_dir data/lang/words.txt
