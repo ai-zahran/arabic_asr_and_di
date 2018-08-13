@@ -1,2 +1,2 @@
-feat_dir=feats
-kaldi_dir=/home/ai/Programs/kaldi
+feat_dir=/home/aiz2/Zahran/data/kaldi/feats
+kaldi_dir=/home/aiz2/Zahran/kaldi

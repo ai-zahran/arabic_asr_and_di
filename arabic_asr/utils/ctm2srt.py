@@ -58,7 +58,8 @@ def make_word_map(words_file_path):
 
 
 def word_nums2words(line, word_map):
-    line = ' '.join([word_map[word_num] for word_num in line.split()])
+    line = ' '.join([word_map[word_num] for word_num in line.split()
+        if word_map[word_num] != '<UNK>'])
     return line
 
 
@@ -78,13 +79,18 @@ def print_st(srt_file, index, lines, word_map, input_format=None,
     st = ' '.join([line['word_num'] for line in lines])
     st = word_nums2words(st, word_map)
     if input_format != None and output_format != None:
-        st = transliterate(st, input_format, output_format)
+        st_trans = transliterate(st, input_format, output_format)
     elif input_format == None and output_format != None:
         raise Exception('Input format not specified.')
     elif input_format != None and output_format == None:
         raise Exception('Output format not specified.')
-    output += st + '\n\n'
-    srt_file.write(output)
+    output += st_trans + '\n\n'
+    try:
+        srt_file.write(output)
+    except Exception:
+        print('Could not process the following string:')
+        print(st)
+        exit(1)
 
 
 def main():
@@ -109,9 +115,8 @@ def main():
     
     for utt_id in utterances:
         srt_file_path = os.path.join(srt_dir_path, utt_id)
-        srt_file = codecs.open(srt_file_path, 'w')
+        srt_file = codecs.open(srt_file_path, 'w', 'utf-8')
         for line in utterances[utt_id]:
-            line = line.strip().split()
             line = {'utt_id': line[0], 'channel': line[1],
                     'start_time': float(line[2]),
                     'duration': float(line[3]), 'word_num': line[4],
