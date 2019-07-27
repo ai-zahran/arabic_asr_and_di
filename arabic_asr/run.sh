@@ -5,6 +5,7 @@
 #: Description : Build Aalto system for MGB-challenge.
 
 . ./cmd.sh
+. ./path_custom.sh
 . ./path.sh
 
 nj=16
