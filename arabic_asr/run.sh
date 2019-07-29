@@ -137,7 +137,7 @@ steps/align_si.sh --nj $nj --cmd "$train_cmd" $train_dir $lang_dir \
 # previous model for initialization
 steps/train_lda_mllt.sh --cmd "$train_cmd" --splice-opts \
     "--left-context=3 --right-context=3" 2500 15000 $train_dir $lang_dir \
-    exp/tri1_ali tri2a/exp || exit 1
+    exp/tri1_ali exp/tri2a || exit 1
 
 # Build decoding graph
 utils/mkgraph.sh $lang_dir exp/tri2a exp/tri2a/graph || exit 1
