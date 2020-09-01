@@ -34,7 +34,7 @@ steps/make_mfcc.sh --nj $nj --cmd "$train_cmd" $whole_dir \
 
 # Split the data into training and test sets based on speakers
 
-# First, select the test set such that it forms about 20% of the whole data set
+# First, select the test set such that it forms about 15% of the whole data set
 num_utts=$(< $whole_dir/segments wc -l)
 # Use awk to the number of test utterances (0.15 of the whole set)
 # and take its floor
